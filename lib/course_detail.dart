@@ -4,68 +4,71 @@ import 'package:flutter/material.dart';
 import 'video.dart';
 
 class CourseDetail extends StatefulWidget {
+  final Map course;
+  const CourseDetail({Key? key, required this.course}) : super(key: key);
+
   @override
   _CourseDetailState createState() => _CourseDetailState();
 }
 
 class _CourseDetailState extends State<CourseDetail> {
-  Map course = {
-    'type': 'Strength Trianing 💪',
-    'name': 'Strength 201',
-    'description': 'Build those tricky to get to muscles, on the spot.',
-    'image': 'images/strength.png',
-    'routines': [
-      {
-        'order': 1,
-        'name': 'Push Ups',
-        'description': 'Classic push ups.',
-        'repetitions': '10',
-        'time': 10,
-      },
-      {
-        'order': 2,
-        'name': 'Pull Ups',
-        'description': 'Lift your body weight.',
-        'repetitions': '15',
-        'time': 5,
-      },
-      {
-        'order': 3,
-        'name': 'Curl Ups',
-        'description': 'Abs: chiseled.',
-        'repetitions': '25',
-        'time': 20,
-      },
-      {
-        'order': 4,
-        'name': 'Leg Ups',
-        'description': 'Feel the burn.',
-        'repetitions': '20',
-        'time': 10,
-      },
-      {
-        'order': 5,
-        'name': 'Dips',
-        'description': 'Don\'t forget them TRI CEPS.',
-        'repetitions': '30',
-        'time': 10,
-      },
-    ],
-    'level': 'Intermediate',
-    'time': 30,
-  };
+  // View Elements
+  SliverAppBar appBar() {
+    return SliverAppBar(
+      expandedHeight: 300,
+      backgroundColor: Colors.transparent,
+      flexibleSpace: FlexibleSpaceBar(
+        centerTitle: false,
+        background: Image.network(
+          widget.course['type']['image'],
+          fit: BoxFit.cover,
+        ),
+        title: Padding(
+          padding: const EdgeInsets.only(left: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                widget.course['name'],
+                style: TextStyle(
+                  color: Colors.grey[900],
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              Text(
+                widget.course['type']['name'],
+                style: TextStyle(
+                  color: Colors.grey[700],
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+        titlePadding: EdgeInsets.zero,
+      ),
+    );
+  }
 
-  List<Widget> buildRoutines() {
-    List<Widget> routineList = [];
-    course['routines'].forEach((element) {
-      routineList.add(
+  SliverPadding buildRoutines() {
+    List<Widget> workouts = [];
+    widget.course['workouts'].forEach((element) {
+      workouts.add(
         GestureDetector(
           onTap: () {
             Navigator.push(
-                context, MaterialPageRoute(builder: (context) => Video()));
+              context,
+              MaterialPageRoute(
+                builder: (context) => Video(
+                  workout: element,
+                ),
+              ),
+            );
           },
           child: Container(
-            margin: EdgeInsets.symmetric(vertical: 15),
+            margin: const EdgeInsets.symmetric(vertical: 15),
             height: 100,
             child: Row(
               children: <Widget>[
@@ -78,8 +81,8 @@ class _CourseDetailState extends State<CourseDetail> {
                   ),
                   child: Center(
                     child: Text(
-                      element['order'].toString(),
-                      style: TextStyle(
+                      (workouts.length + 1).toString(),
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 50,
                         fontWeight: FontWeight.w800,
@@ -89,7 +92,7 @@ class _CourseDetailState extends State<CourseDetail> {
                 ),
                 Expanded(
                   child: Container(
-                    padding: EdgeInsets.all(15),
+                    padding: const EdgeInsets.all(15),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
@@ -112,10 +115,12 @@ class _CourseDetailState extends State<CourseDetail> {
                         ),
                         Text(
                           element['description'],
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                              color: Colors.grey[800],
-                              fontSize: 16,
-                              fontWeight: FontWeight.w300),
+                            color: Colors.grey[800],
+                            fontSize: 16,
+                            fontWeight: FontWeight.w300,
+                          ),
                         ),
                         Expanded(
                           child: Row(
@@ -123,19 +128,20 @@ class _CourseDetailState extends State<CourseDetail> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: <Widget>[
                               Text(
-                                '🔥 ${element['repetitions']} reps',
+                                '🔥 5 reps',
                                 style: TextStyle(
                                     color: Colors.grey[800],
                                     fontSize: 14,
                                     fontWeight: FontWeight.w300),
                               ),
-                              SizedBox(width: 10),
+                              const SizedBox(width: 10),
                               Text(
-                                '🕘 ${element['time']} minutes',
+                                '🕘 ${element['duration']} minutes',
                                 style: TextStyle(
-                                    color: Colors.grey[800],
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w300),
+                                  color: Colors.grey[800],
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w300,
+                                ),
                               ),
                             ],
                           ),
@@ -150,7 +156,14 @@ class _CourseDetailState extends State<CourseDetail> {
         ),
       );
     });
-    return routineList;
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+      sliver: SliverList(
+        delegate: SliverChildListDelegate(
+          workouts,
+        ),
+      ),
+    );
   }
 
   @override
@@ -159,57 +172,8 @@ class _CourseDetailState extends State<CourseDetail> {
       body: Center(
         child: CustomScrollView(
           slivers: <Widget>[
-            SliverAppBar(
-              expandedHeight: 400,
-              backgroundColor: Colors.transparent,
-              flexibleSpace: FlexibleSpaceBar(
-                centerTitle: false,
-                background: Center(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(150),
-                    child: Image.asset(
-                      course['image'],
-                      height: 300,
-                      width: 300,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                title: Padding(
-                  padding: const EdgeInsets.only(left: 20),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        course['name'],
-                        style: TextStyle(
-                          color: Colors.grey[900],
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      Text(
-                        course['type'],
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                titlePadding: EdgeInsets.zero,
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate(
-                  buildRoutines(),
-                ),
-              ),
-            ),
+            appBar(),
+            buildRoutines(),
           ],
         ),
       ),

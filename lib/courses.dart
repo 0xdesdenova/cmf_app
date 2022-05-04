@@ -1,73 +1,63 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+
+// Packages
+import 'package:http/http.dart' as http;
 
 // Routes
 import 'course_detail.dart';
-import 'profile.dart';
 
 class CourseList extends StatefulWidget {
+  const CourseList({Key? key}) : super(key: key);
+
   @override
   _CourseListState createState() => _CourseListState();
 }
 
 class _CourseListState extends State<CourseList> {
-  Map filters = {
-    'level': 'Begginer',
-  };
-  List courses = [
-    {
-      'type': 'Flexibility 🤸',
-      'name': 'Yoga',
-      'description': 'Yoga for begginers.',
-      'image': 'images/yoga.png',
-      'routines': 3,
-      'level': 'Begginer',
-      'time': 25,
-    },
-    {
-      'type': 'Aerobics 🚴',
-      'name': 'Cardio',
-      'description': 'Get fit, stay healthy!',
-      'image': 'images/cardio.png',
-      'routines': 3,
-      'level': 'Advanced',
-      'time': 15,
-    },
-    {
-      'type': 'Strenth Trianing 💪',
-      'name': 'Core',
-      'description': 'Essential strength training.',
-      'image': 'images/core.png',
-      'routines': 3,
-      'level': 'Intermediate',
-      'time': 10,
-    },
-    {
-      'type': 'Mindfulness 🧘‍♂️',
-      'name': 'Meditation',
-      'description': 'Calm your mind and your soul.',
-      'image': 'images/mindfulness.png',
-      'routines': 3,
-      'level': 'Expert',
-      'time': 45,
-    },
-    {
-      'type': 'Strength Trianing 💪',
-      'name': 'Strength 201',
-      'description': 'Build those tricky to get to muscles, on the spot.',
-      'image': 'images/strength.png',
-      'routines': 4,
-      'level': 'Intermediate',
-      'time': 30,
-    },
+  List levels = [
+    'Begginer',
+    'Intermediate',
+    'Advanced',
   ];
+  List courses = [];
+  List repeats = [];
 
-  void filter() {
-    setState(() {
-      filters['level'] = 'All';
+  // API Calls
+  void getCourses() {
+    Uri uri = Uri.parse(
+        'https://choosemyfitness-api.herokuapp.com/api/virtual_workouts/courses/');
+
+    http.get(uri).then((response) {
+      setState(() {
+        courses = json.decode(utf8.decode(response.bodyBytes));
+      });
     });
   }
 
-  List<Widget> buildCourses() {
+  // View Elements
+  SliverAppBar appBar() {
+    return SliverAppBar(
+      centerTitle: true,
+      expandedHeight: 200,
+      backgroundColor: Colors.transparent,
+      leading: IconButton(
+        icon: const Icon(Icons.tune),
+        onPressed: () {
+          Scaffold.of(context).openEndDrawer();
+        },
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        centerTitle: true,
+        background: Image.asset(
+          'images/video_workout.png',
+          fit: BoxFit.cover,
+        ),
+      ),
+    );
+  }
+
+  SliverPadding buildCourses() {
     List<Widget> courseList = [];
     courseList.add(
       Text(
@@ -79,256 +69,235 @@ class _CourseListState extends State<CourseList> {
         ),
       ),
     );
-    courses.forEach((element) {
-      if (filters['level'] == 'All' || filters['level'] == element['level']) {
-        courseList.add(
-          GestureDetector(
-            onTap: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => CourseDetail()));
-            },
-            child: Container(
-              margin: EdgeInsets.symmetric(vertical: 15),
-              height: 200,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
+    for (var element in courses) {
+      courseList.add(
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CourseDetail(
+                  course: element,
+                ),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(25),
-                child: Stack(
-                  alignment: Alignment.centerRight,
-                  children: <Widget>[
-                    Image.asset(
-                      element['image'],
-                      fit: BoxFit.fitWidth,
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            );
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 15),
+            height: 200,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(25),
+              child: Stack(
+                alignment: Alignment.centerRight,
+                children: <Widget>[
+                  Image.network(
+                    element['type']['image'],
+                    fit: BoxFit.fitWidth,
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          Text(
+                            element['name'],
+                            style: TextStyle(
+                              color: Colors.grey[900],
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            element['type']['name'],
+                            style: const TextStyle(
+                              color: Colors.deepPurpleAccent,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        element['description'],
+                        style: TextStyle(
+                            color: Colors.grey[800],
+                            fontSize: 16,
+                            fontWeight: FontWeight.w300),
+                      ),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Text(
-                              element['name'],
+                              '📺 ${element['workouts'].length} Routines',
                               style: TextStyle(
-                                color: Colors.grey[900],
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                              ),
+                                  color: Colors.grey[800],
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w300),
                             ),
                             Text(
-                              element['type'],
+                              '🔥 ${levels[element['level']]}',
                               style: TextStyle(
-                                color: Colors.deepPurpleAccent,
+                                  color: Colors.grey[800],
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w300),
+                            ),
+                            Text(
+                              '🕘 ${courseDuration(element['workouts'])} minutes',
+                              style: TextStyle(
+                                color: Colors.grey[800],
+                                fontSize: 14,
+                                fontWeight: FontWeight.w300,
                               ),
                             ),
                           ],
                         ),
-                        Text(
-                          element['description'],
-                          style: TextStyle(
-                              color: Colors.grey[800],
-                              fontSize: 16,
-                              fontWeight: FontWeight.w300),
-                        ),
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Text(
-                                '📺 ${element['routines']} Routines',
-                                style: TextStyle(
-                                    color: Colors.grey[800],
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w300),
-                              ),
-                              Text(
-                                '🔥 ${element['level']} ',
-                                style: TextStyle(
-                                    color: Colors.grey[800],
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w300),
-                              ),
-                              Text(
-                                '🕘 ${element['time']}  minutes',
-                                style: TextStyle(
-                                    color: Colors.grey[800],
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w300),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
-        );
-      }
-    });
-    return courseList;
+        ),
+      );
+    }
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+      sliver: SliverList(
+        delegate: SliverChildListDelegate(
+          courseList,
+        ),
+      ),
+    );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      endDrawer: FilterMenu(filter),
-      body: Center(
-        child: CustomScrollView(
-          slivers: <Widget>[
-            SliverAppBar(
-              centerTitle: true,
-              expandedHeight: 400,
-              backgroundColor: Colors.transparent,
-              leading: IconButton(
-                icon: Icon(
-                  Icons.account_circle,
-                  size: 30,
+  SliverPadding buildRecurring() {
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      sliver: SliverToBoxAdapter(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+              child: Text(
+                'Repeat',
+                style: TextStyle(
+                  color: Colors.grey[700],
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
                 ),
-                onPressed: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => Profile()));
-                },
-              ),
-              actions: <Widget>[
-                Builder(
-                  builder: (context) => IconButton(
-                    icon: Icon(Icons.tune),
-                    onPressed: () {
-                      Scaffold.of(context).openEndDrawer();
-                    },
-                  ),
-                ),
-              ],
-              flexibleSpace: FlexibleSpaceBar(
-                centerTitle: true,
-                background: Center(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(150),
-                    child: Image.asset(
-                      'images/all_around.png',
-                      height: 300,
-                      width: 300,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                title: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(
-                      'Good morning,',
-                      style: TextStyle(
-                        color: Colors.grey[900],
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    Text(
-                      'Enrique',
-                      style: TextStyle(
-                        color: Colors.grey[700],
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-                titlePadding: EdgeInsets.zero,
               ),
             ),
-            SliverPadding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              sliver: SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 10, horizontal: 20),
-                      child: Text(
-                        'Repeat',
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 100,
-                      child: ListView.separated(
-                        padding: EdgeInsets.only(left: 20),
-                        itemCount: courses.length,
-                        scrollDirection: Axis.horizontal,
-                        itemBuilder: (context, index) {
-                          return GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => CourseDetail()));
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.deepPurpleAccent,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              width: 250,
-                              child: Padding(
-                                padding: const EdgeInsets.all(15),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    Text(
-                                      courses[index]['type'],
-                                      style: TextStyle(
-                                          color: Colors.grey[100],
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w300),
-                                    ),
-                                    Text(
-                                      courses[index]['name'],
-                                      style: TextStyle(
-                                        color: Colors.grey[100],
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
+            SizedBox(
+              height: 100,
+              child: repeats.isNotEmpty
+                  ? ListView.separated(
+                      padding: const EdgeInsets.only(left: 20),
+                      itemCount: courses.length,
+                      scrollDirection: Axis.horizontal,
+                      itemBuilder: (context, index) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CourseDetail(
+                                  course: repeats[index],
                                 ),
                               ),
+                            );
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.deepPurpleAccent,
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                          );
-                        },
-                        separatorBuilder: (context, index) {
-                          return SizedBox(
-                            width: 20,
-                          );
-                        },
-                      ),
+                            width: 250,
+                            child: Padding(
+                              padding: const EdgeInsets.all(15),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    courses[index]['type'],
+                                    style: TextStyle(
+                                        color: Colors.grey[100],
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w300),
+                                  ),
+                                  Text(
+                                    courses[index]['name'],
+                                    style: TextStyle(
+                                      color: Colors.grey[100],
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      separatorBuilder: (context, index) {
+                        return const SizedBox(
+                          width: 20,
+                        );
+                      },
+                    )
+                  : const Center(
+                      child: Text('You have not started any courses'),
                     ),
-                  ],
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate(
-                  buildCourses(),
-                ),
-              ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  // View Utility Methods
+  num courseDuration(List course) {
+    num totalTime = 0;
+    for (var element in course) {
+      totalTime += element['duration'];
+    }
+    return totalTime;
+  }
+
+  // View Lifecycle Methods
+  @override
+  void didChangeDependencies() {
+    getCourses();
+    super.didChangeDependencies();
+  }
+
+  @override
+  void setState(VoidCallback fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: courses.isNotEmpty
+          ? CustomScrollView(
+              slivers: <Widget>[
+                appBar(),
+                buildRecurring(),
+                buildCourses(),
+              ],
+            )
+          : const CircularProgressIndicator(),
     );
   }
 }
@@ -380,7 +349,7 @@ class _FilterMenuState extends State<FilterMenu> {
             child: Container(
               child: Text(
                 element['label'],
-                style: TextStyle(fontSize: 16),
+                style: const TextStyle(fontSize: 16),
               ),
             ),
           ),
@@ -418,9 +387,9 @@ class _FilterMenuState extends State<FilterMenu> {
               ),
             ),
             Container(
-              child: Text(
+              child: const Text(
                 'Select Filters to Apply',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 20,
                 ),
               ),
@@ -437,7 +406,7 @@ class _FilterMenuState extends State<FilterMenu> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 onPressed: widget.filter,
-                child: Text(
+                child: const Text(
                   'Filter',
                   style: TextStyle(
                     color: Colors.white,

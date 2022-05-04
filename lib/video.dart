@@ -5,20 +5,37 @@ import 'package:flutter/services.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class Video extends StatefulWidget {
+  final Map workout;
+  const Video({Key? key, required this.workout}) : super(key: key);
+
   @override
   _VideoState createState() => _VideoState();
 }
 
 class _VideoState extends State<Video> {
-  YoutubePlayerController controller = YoutubePlayerController(
-    initialVideoId: 'n4qFrDDMXSo',
-    flags: YoutubePlayerFlags(),
-  );
+  // Variables
+  late YoutubePlayerController controller;
+  bool watched = false;
 
   @override
   void initState() {
     SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft]);
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    controller = YoutubePlayerController(
+      initialVideoId: widget.workout['video'],
+      flags: const YoutubePlayerFlags(),
+    );
+    controller.addListener(() {
+      if (controller.value.position.inSeconds > 10 && !watched) {
+        print('Video watched');
+        watched = true;
+      }
+    });
+    super.didChangeDependencies();
   }
 
   @override

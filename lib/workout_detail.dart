@@ -1,65 +1,131 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
 
-// Packages
-import 'package:http/http.dart' as http;
-
-// Utilities
+// Utility Functions
 import 'utility_functions.dart';
 
 // Routes
-import 'workout_detail.dart';
 
-class WorkoutList extends StatefulWidget {
-  const WorkoutList({Key? key}) : super(key: key);
+class WorkoutDetail extends StatefulWidget {
+  const WorkoutDetail({Key? key, required this.workout, this.workouts})
+      : super(key: key);
+
+  final Map workout;
+  final workouts;
 
   @override
-  _WorkoutListState createState() => _WorkoutListState();
+  _WorkoutDetailState createState() => _WorkoutDetailState();
 }
 
-class _WorkoutListState extends State<WorkoutList> {
+class _WorkoutDetailState extends State<WorkoutDetail> {
   // Variables
-  Map filters = {
-    'level': 'Begginer',
-  };
-  List workouts = [];
-  List favorites = [];
-
-  // API Calls
-  void getWorkouts() {
-    Uri uri = Uri.parse(
-        'https://choosemyfitness-api.herokuapp.com/api/gyms/workouts/');
-
-    http.get(uri).then((response) {
-      setState(() {
-        workouts = json.decode(utf8.decode(response.bodyBytes));
-      });
-    });
-  }
-
+  List passes = [];
   // View Elements
   SliverAppBar appBar() {
     return SliverAppBar(
-      centerTitle: true,
       expandedHeight: 200,
       backgroundColor: Colors.transparent,
-      leading: IconButton(
-        icon: const Icon(Icons.tune),
-        onPressed: () {
-          showFilters();
-        },
-      ),
       flexibleSpace: FlexibleSpaceBar(
-        centerTitle: true,
-        background: Image.asset(
-          'images/workout.png',
+        background: Image.network(
+          widget.workout['type']['image'],
           fit: BoxFit.cover,
         ),
       ),
     );
   }
 
-  SliverPadding favoriteWorkouts() {
+  SliverPadding workoutDetails() {
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+      sliver: SliverToBoxAdapter(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: <Widget>[
+                Text(
+                  widget.workout['name'],
+                  style: TextStyle(
+                    color: Colors.grey[900],
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    confirmReservation(context, widget.workout);
+                  },
+                  child: const Text('Book Now'),
+                ),
+              ],
+            ),
+            Text(
+              widget.workout['type']['name'],
+              style: const TextStyle(
+                color: Colors.deepPurpleAccent,
+                fontSize: 18,
+              ),
+            ),
+            Text(
+              '@${widget.workout['gym']['name']}',
+              style: TextStyle(
+                color: Colors.grey[800],
+                fontSize: 16,
+                fontWeight: FontWeight.w300,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'About',
+              style: TextStyle(
+                color: Colors.grey[800],
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              widget.workout['description'],
+              style: TextStyle(
+                color: Colors.grey[800],
+                fontSize: 16,
+                fontWeight: FontWeight.w300,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '📍 ${calculateDistance(latitude: widget.workout['gym']['latitude'], longitude: widget.workout['gym']['longitude'])}km away',
+              style: TextStyle(
+                color: Colors.grey[800],
+                fontSize: 14,
+                fontWeight: FontWeight.w300,
+              ),
+            ),
+            Text(
+              '🕘 ${parseTime(widget.workout['duration'])}',
+              style: TextStyle(
+                color: Colors.grey[800],
+                fontSize: 14,
+                fontWeight: FontWeight.w300,
+              ),
+            ),
+            Text(
+              widget.workout['capacity'] == 1
+                  ? '⚡️ ${widget.workout['capacity']} Person'
+                  : '⚡️ ${widget.workout['capacity']} People',
+              style: TextStyle(
+                color: Colors.grey[800],
+                fontSize: 14,
+                fontWeight: FontWeight.w300,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  SliverPadding passHistory() {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(vertical: 20),
       sliver: SliverToBoxAdapter(
@@ -70,7 +136,7 @@ class _WorkoutListState extends State<WorkoutList> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
               child: Text(
-                'Favorite Workouts',
+                'Pass History',
                 style: TextStyle(
                   color: Colors.grey[700],
                   fontSize: 20,
@@ -80,28 +146,13 @@ class _WorkoutListState extends State<WorkoutList> {
             ),
             SizedBox(
               height: 100,
-              child: favorites.isNotEmpty
+              child: passes.isNotEmpty
                   ? ListView.separated(
                       padding: const EdgeInsets.only(left: 20),
                       scrollDirection: Axis.horizontal,
                       itemBuilder: (context, index) {
                         return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => WorkoutDetail(
-                                  workout: favorites[index],
-                                  workouts: workouts,
-                                ),
-                              ),
-                            );
-                          },
-                          onDoubleTap: () {
-                            setState(() {
-                              toggleFavorite(favorites[index]);
-                            });
-                          },
+                          onTap: () {},
                           child: Container(
                             decoration: BoxDecoration(
                               color: Colors.deepPurpleAccent,
@@ -115,14 +166,14 @@ class _WorkoutListState extends State<WorkoutList> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
                                   Text(
-                                    favorites[index]['type']['name'],
+                                    passes[index]['workout']['gym']['name'],
                                     style: TextStyle(
                                         color: Colors.grey[100],
                                         fontSize: 16,
                                         fontWeight: FontWeight.w300),
                                   ),
                                   Text(
-                                    favorites[index]['name'],
+                                    passes[index]['workout']['name'],
                                     style: TextStyle(
                                       color: Colors.grey[100],
                                       fontSize: 18,
@@ -140,10 +191,10 @@ class _WorkoutListState extends State<WorkoutList> {
                           width: 20,
                         );
                       },
-                      itemCount: favorites.length,
+                      itemCount: passes.length,
                     )
                   : const Center(
-                      child: Text('You have no favorites'),
+                      child: Text('You have not attended this class.'),
                     ),
             ),
           ],
@@ -152,11 +203,11 @@ class _WorkoutListState extends State<WorkoutList> {
     );
   }
 
-  SliverPadding buildWorkouts() {
+  SliverPadding similarWorkouts() {
     List<Widget> workoutList = [];
     workoutList.add(
       Text(
-        'Workouts',
+        'Similar Workouts',
         style: TextStyle(
           color: Colors.grey[700],
           fontSize: 20,
@@ -164,7 +215,7 @@ class _WorkoutListState extends State<WorkoutList> {
         ),
       ),
     );
-    for (var element in workouts) {
+    widget.workouts.forEach((element) {
       workoutList.add(
         GestureDetector(
           onTap: () {
@@ -173,13 +224,9 @@ class _WorkoutListState extends State<WorkoutList> {
               MaterialPageRoute(
                 builder: (context) => WorkoutDetail(
                   workout: element,
-                  workouts: workouts,
                 ),
               ),
             );
-          },
-          onDoubleTap: () {
-            toggleFavorite(element);
           },
           onLongPress: () {
             confirmReservation(context, element);
@@ -271,7 +318,7 @@ class _WorkoutListState extends State<WorkoutList> {
           ),
         ),
       );
-    }
+    });
     return SliverPadding(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
       sliver: SliverList(
@@ -283,20 +330,6 @@ class _WorkoutListState extends State<WorkoutList> {
   }
 
   // View Methods
-  void toggleFavorite(Map element) {
-    setState(() {
-      favorites.contains(element)
-          ? favorites.remove(element)
-          : favorites.add(element);
-    });
-
-    favorites.contains(element)
-        ? ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${element['name']} added to favorites.')))
-        : ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('${element['name']} removed from favorites.')));
-  }
-
   Future confirmReservation(BuildContext context, Map element) async {
     return await showModalBottomSheet(
       context: context,
@@ -386,7 +419,7 @@ class _WorkoutListState extends State<WorkoutList> {
                 child: RaisedButton(
                   onPressed: () {},
                   onLongPress: () {
-                    Navigator.pop(context);
+                    Navigator.pop(context, true);
                   },
                   color: Colors.deepPurpleAccent,
                   shape: RoundedRectangleBorder(
@@ -411,140 +444,23 @@ class _WorkoutListState extends State<WorkoutList> {
         : null);
   }
 
-  void showFilters() {
-    showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        builder: (context) {
-          List filters = [
-            {
-              'name': 'flexibility',
-              'label': 'Flexibility',
-              'value': false,
-            },
-            {
-              'name': 'strength',
-              'label': 'Strength Training',
-              'value': false,
-            },
-            {
-              'name': 'mindfulness',
-              'label': 'Mindfulness',
-              'value': false,
-            },
-            {
-              'name': 'aerobics',
-              'label': 'Aerobics',
-              'value': false,
-            },
-            {
-              'name': 'premium',
-              'label': 'Premium Content',
-              'value': false,
-            },
-          ];
-
-          List<Widget> createFilters() {
-            List<Widget> filterList = [];
-            for (var element in filters) {
-              filterList.add(Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      element['label'],
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ),
-                  Switch(
-                    value: element['value'],
-                    onChanged: (value) {
-                      setState(() {
-                        element['value'] = !element['value'];
-                      });
-                    },
-                  )
-                ],
-              ));
-            }
-            return filterList;
-          }
-
-          return Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Center(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(150),
-                    child: Image.asset(
-                      'images/filter.png',
-                      height: 150,
-                      width: 150,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                const Text(
-                  'Select Filters to Apply',
-                  style: TextStyle(
-                    fontSize: 20,
-                  ),
-                ),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: createFilters(),
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  child: RaisedButton(
-                    color: Colors.deepPurpleAccent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    onPressed: () {},
-                    child: const Text(
-                      'Filter',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        });
-  }
-
-  // Lifecycle Methods
-  @override
-  void didChangeDependencies() {
-    getWorkouts();
-    super.didChangeDependencies();
-  }
-
-  @override
-  void setState(VoidCallback fn) {
-    if (mounted) {
-      super.setState(fn);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: workouts.isNotEmpty
-          ? CustomScrollView(
-              slivers: <Widget>[
-                appBar(),
-                favoriteWorkouts(),
-                buildWorkouts(),
-              ],
-            )
-          : const CircularProgressIndicator(),
+    return Scaffold(
+      body: Center(
+        child: CustomScrollView(
+          slivers: <Widget>[
+            appBar(),
+            workoutDetails(),
+            passHistory(),
+            widget.workouts != null
+                ? similarWorkouts()
+                : SliverToBoxAdapter(
+                    child: Container(),
+                  ),
+          ],
+        ),
+      ),
     );
   }
 }

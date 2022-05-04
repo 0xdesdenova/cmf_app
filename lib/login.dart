@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 // Routes
 import 'register.dart';
-import 'courses.dart';
+import 'navigation.dart';
 
 class Login extends StatefulWidget {
+  const Login({Key? key}) : super(key: key);
+
   @override
   _LoginState createState() => _LoginState();
 }
@@ -18,7 +20,7 @@ class _LoginState extends State<Login> {
         children: <Widget>[
           Center(
             child: Container(
-              margin: EdgeInsets.fromLTRB(0, 200, 0, 50),
+              margin: const EdgeInsets.fromLTRB(0, 200, 0, 50),
               width: 200,
               height: 200,
               decoration: BoxDecoration(
@@ -59,7 +61,7 @@ class _LoginState extends State<Login> {
             ),
           ),
           Padding(
-            padding: EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+            padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
             child: SizedBox(
               width: double.infinity,
               height: 50,
@@ -69,10 +71,12 @@ class _LoginState extends State<Login> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 onPressed: () {
-                  Navigator.pushReplacement(context,
-                      MaterialPageRoute(builder: (context) => CourseList()));
+                  Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => CustomNavigationBar()));
                 },
-                child: Text(
+                child: const Text(
                   'Get Token',
                   style: TextStyle(
                     color: Colors.white,
@@ -97,7 +101,7 @@ class _LoginState extends State<Login> {
                   Navigator.push(context,
                       MaterialPageRoute(builder: (context) => Register()));
                 },
-                child: Text(
+                child: const Text(
                   'here',
                   style: TextStyle(
                     color: Colors.deepPurpleAccent,

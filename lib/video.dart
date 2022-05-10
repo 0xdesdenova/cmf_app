@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+// Models
+import 'user.dart';
+
 // Packages
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
 
 class Video extends StatefulWidget {
   final Map workout;
@@ -17,6 +22,18 @@ class _VideoState extends State<Video> {
   late YoutubePlayerController controller;
   bool watched = false;
 
+  // API Calls
+  void addSession() async {
+    Uri uri = Uri.parse(
+        'https://choosemyfitness-api.herokuapp.com/api/virtual_workouts/sessions/');
+
+    http.post(uri, body: {
+      'user':
+          Provider.of<UserData>(context, listen: false).user['id'].toString(),
+      'virtual_workout': widget.workout['id'].toString(),
+    });
+  }
+
   @override
   void initState() {
     SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft]);
@@ -30,8 +47,8 @@ class _VideoState extends State<Video> {
       flags: const YoutubePlayerFlags(),
     );
     controller.addListener(() {
-      if (controller.value.position.inSeconds > 10 && !watched) {
-        print('Video watched');
+      if (controller.value.position.inSeconds > 60 && !watched) {
+        addSession();
         watched = true;
       }
     });

@@ -100,18 +100,14 @@ class _CourseDetailState extends State<CourseDetail> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            Text(
-                              element['name'],
-                              style: TextStyle(
-                                color: Colors.grey[900],
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          element['name'],
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.grey[900],
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         Text(
                           element['description'],

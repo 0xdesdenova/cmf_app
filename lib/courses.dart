@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 
+// Models
+import 'user.dart';
+
 // Packages
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 // Routes
 import 'course_detail.dart';
+import 'video.dart';
 
 class CourseList extends StatefulWidget {
   const CourseList({Key? key}) : super(key: key);
@@ -21,7 +26,7 @@ class _CourseListState extends State<CourseList> {
     'Advanced',
   ];
   List courses = [];
-  List repeats = [];
+  List sessions = [];
 
   // API Calls
   void getCourses() {
@@ -197,7 +202,7 @@ class _CourseListState extends State<CourseList> {
             ),
             SizedBox(
               height: 100,
-              child: repeats.isNotEmpty
+              child: sessions.isNotEmpty
                   ? ListView.separated(
                       padding: const EdgeInsets.only(left: 20),
                       itemCount: courses.length,
@@ -208,8 +213,8 @@ class _CourseListState extends State<CourseList> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => CourseDetail(
-                                  course: repeats[index],
+                                builder: (context) => Video(
+                                  workout: sessions[index]['virtual_workout'],
                                 ),
                               ),
                             );
@@ -227,14 +232,15 @@ class _CourseListState extends State<CourseList> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
                                   Text(
-                                    courses[index]['type'],
+                                    sessions[index]['virtual_workout']['course']
+                                        ['name'],
                                     style: TextStyle(
                                         color: Colors.grey[100],
                                         fontSize: 16,
                                         fontWeight: FontWeight.w300),
                                   ),
                                   Text(
-                                    courses[index]['name'],
+                                    sessions[index]['virtual_workout']['name'],
                                     style: TextStyle(
                                       color: Colors.grey[100],
                                       fontSize: 18,
@@ -275,6 +281,7 @@ class _CourseListState extends State<CourseList> {
   // View Lifecycle Methods
   @override
   void didChangeDependencies() {
+    sessions = Provider.of<UserData>(context).user['sessions'].toSet().toList();
     getCourses();
     super.didChangeDependencies();
   }

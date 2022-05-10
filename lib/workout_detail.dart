@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+
+// Packages
+import 'package:http/http.dart' as http;
 
 // Utility Functions
 import 'utility_functions.dart';
@@ -9,7 +13,7 @@ class WorkoutDetail extends StatefulWidget {
   const WorkoutDetail({Key? key, required this.workout, this.workouts})
       : super(key: key);
 
-  final Map workout;
+  final int workout;
   final workouts;
 
   @override
@@ -18,7 +22,20 @@ class WorkoutDetail extends StatefulWidget {
 
 class _WorkoutDetailState extends State<WorkoutDetail> {
   // Variables
+  Map workout = {};
   List passes = [];
+
+  void getWorkout() {
+    Uri uri = Uri.parse(
+        'https://choosemyfitness-api.herokuapp.com/api/gyms/workouts/${widget.workout}/');
+
+    http.get(uri).then((response) {
+      setState(() {
+        workout = json.decode(utf8.decode(response.bodyBytes));
+      });
+    });
+  }
+
   // View Elements
   SliverAppBar appBar() {
     return SliverAppBar(
@@ -26,7 +43,7 @@ class _WorkoutDetailState extends State<WorkoutDetail> {
       backgroundColor: Colors.transparent,
       flexibleSpace: FlexibleSpaceBar(
         background: Image.network(
-          widget.workout['type']['image'],
+          workout['type']['image'],
           fit: BoxFit.cover,
         ),
       ),
@@ -45,7 +62,7 @@ class _WorkoutDetailState extends State<WorkoutDetail> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 Text(
-                  widget.workout['name'],
+                  workout['name'],
                   style: TextStyle(
                     color: Colors.grey[900],
                     fontSize: 22,
@@ -54,21 +71,21 @@ class _WorkoutDetailState extends State<WorkoutDetail> {
                 ),
                 GestureDetector(
                   onTap: () {
-                    confirmReservation(context, widget.workout);
+                    confirmReservation(context, workout);
                   },
                   child: const Text('Book Now'),
                 ),
               ],
             ),
             Text(
-              widget.workout['type']['name'],
+              workout['type']['name'],
               style: const TextStyle(
                 color: Colors.deepPurpleAccent,
                 fontSize: 18,
               ),
             ),
             Text(
-              '@${widget.workout['gym']['name']}',
+              '@${workout['gym']['name']}',
               style: TextStyle(
                 color: Colors.grey[800],
                 fontSize: 16,
@@ -85,7 +102,7 @@ class _WorkoutDetailState extends State<WorkoutDetail> {
               ),
             ),
             Text(
-              widget.workout['description'],
+              workout['description'],
               style: TextStyle(
                 color: Colors.grey[800],
                 fontSize: 16,
@@ -94,7 +111,7 @@ class _WorkoutDetailState extends State<WorkoutDetail> {
             ),
             const SizedBox(height: 10),
             Text(
-              '📍 ${calculateDistance(latitude: widget.workout['gym']['latitude'], longitude: widget.workout['gym']['longitude'])}km away',
+              '📍 ${calculateDistance(latitude: workout['gym']['latitude'], longitude: workout['gym']['longitude'])}km away',
               style: TextStyle(
                 color: Colors.grey[800],
                 fontSize: 14,
@@ -102,7 +119,7 @@ class _WorkoutDetailState extends State<WorkoutDetail> {
               ),
             ),
             Text(
-              '🕘 ${parseTime(widget.workout['duration'])}',
+              '🕘 ${workout['duration']}m',
               style: TextStyle(
                 color: Colors.grey[800],
                 fontSize: 14,
@@ -110,9 +127,9 @@ class _WorkoutDetailState extends State<WorkoutDetail> {
               ),
             ),
             Text(
-              widget.workout['capacity'] == 1
-                  ? '⚡️ ${widget.workout['capacity']} Person'
-                  : '⚡️ ${widget.workout['capacity']} People',
+              workout['capacity'] == 1
+                  ? '⚡️ ${workout['capacity']} Person'
+                  : '⚡️ ${workout['capacity']} People',
               style: TextStyle(
                 color: Colors.grey[800],
                 fontSize: 14,
@@ -223,7 +240,7 @@ class _WorkoutDetailState extends State<WorkoutDetail> {
               context,
               MaterialPageRoute(
                 builder: (context) => WorkoutDetail(
-                  workout: element,
+                  workout: element['id'],
                 ),
               ),
             );
@@ -301,7 +318,7 @@ class _WorkoutDetailState extends State<WorkoutDetail> {
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              '🕘 ${parseDuration(element['duration'])}',
+                              '🕘 ${element['duration']}m',
                               style: TextStyle(
                                   color: Colors.grey[800],
                                   fontSize: 14,
@@ -444,22 +461,38 @@ class _WorkoutDetailState extends State<WorkoutDetail> {
         : null);
   }
 
+  // Lifecycle Methods
+  @override
+  void didChangeDependencies() {
+    getWorkout();
+    super.didChangeDependencies();
+  }
+
+  @override
+  void setState(VoidCallback fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: CustomScrollView(
-          slivers: <Widget>[
-            appBar(),
-            workoutDetails(),
-            passHistory(),
-            widget.workouts != null
-                ? similarWorkouts()
-                : SliverToBoxAdapter(
-                    child: Container(),
-                  ),
-          ],
-        ),
+        child: workout.isNotEmpty
+            ? CustomScrollView(
+                slivers: <Widget>[
+                  appBar(),
+                  workoutDetails(),
+                  passHistory(),
+                  widget.workouts != null
+                      ? similarWorkouts()
+                      : SliverToBoxAdapter(
+                          child: Container(),
+                        ),
+                ],
+              )
+            : const CircularProgressIndicator(),
       ),
     );
   }

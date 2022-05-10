@@ -4,8 +4,12 @@ import 'dart:convert';
 // Utility Functions
 import 'utility_functions.dart';
 
+// Models
+import 'user.dart';
+
 // Packages
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 // Routes
 import 'gym_detail.dart';
@@ -23,7 +27,7 @@ class _GymListState extends State<GymList> {
     'level': 'Begginer',
   };
   List gyms = [];
-  List favorites = [];
+  List entries = [];
 
   // API Calls
   void getGyms() {
@@ -58,7 +62,7 @@ class _GymListState extends State<GymList> {
     );
   }
 
-  SliverPadding favoriteGyms() {
+  SliverPadding buildEntries() {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(vertical: 20),
       sliver: SliverToBoxAdapter(
@@ -69,7 +73,7 @@ class _GymListState extends State<GymList> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
               child: Text(
-                'Favorite Gyms',
+                'Recent Gyms',
                 style: TextStyle(
                   color: Colors.grey[700],
                   fontSize: 20,
@@ -79,7 +83,7 @@ class _GymListState extends State<GymList> {
             ),
             SizedBox(
               height: 100,
-              child: favorites.isNotEmpty
+              child: entries.isNotEmpty
                   ? ListView.separated(
                       padding: const EdgeInsets.only(left: 20),
                       scrollDirection: Axis.horizontal,
@@ -87,11 +91,13 @@ class _GymListState extends State<GymList> {
                         return GestureDetector(
                           onTap: () {
                             Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => GymDetail(
-                                          gym: gyms[index],
-                                        )));
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => GymDetail(
+                                  gym: entries[index]['gym']['id'],
+                                ),
+                              ),
+                            );
                           },
                           child: Container(
                             decoration: BoxDecoration(
@@ -106,14 +112,14 @@ class _GymListState extends State<GymList> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
                                   Text(
-                                    gyms[index]['chain']['name'],
+                                    entries[index]['gym']['chain']['name'],
                                     style: TextStyle(
                                         color: Colors.grey[100],
                                         fontSize: 16,
                                         fontWeight: FontWeight.w300),
                                   ),
                                   Text(
-                                    gyms[index]['name'],
+                                    entries[index]['gym']['name'],
                                     style: TextStyle(
                                       color: Colors.grey[100],
                                       fontSize: 18,
@@ -131,10 +137,10 @@ class _GymListState extends State<GymList> {
                           width: 20,
                         );
                       },
-                      itemCount: favorites.length,
+                      itemCount: entries.length,
                     )
                   : const Center(
-                      child: Text('You have no favorites'),
+                      child: Text('You have not visited any gyms'),
                     ),
             ),
           ],
@@ -162,7 +168,7 @@ class _GymListState extends State<GymList> {
             Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => GymDetail(gym: element)));
+                    builder: (context) => GymDetail(gym: element['id'])));
           },
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 15),
@@ -232,11 +238,8 @@ class _GymListState extends State<GymList> {
                       ),
                     ],
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      toggleFavorite(element);
-                    },
-                    child: const Icon(Icons.favorite_border),
+                  CircleAvatar(
+                    backgroundImage: NetworkImage(element['chain']['image']),
                   ),
                 ],
               ),
@@ -256,18 +259,21 @@ class _GymListState extends State<GymList> {
   }
 
   // View Methods
-  void toggleFavorite(Map element) {
-    setState(() {
-      favorites.contains(element)
-          ? favorites.remove(element)
-          : favorites.add(element);
-    });
-
-    favorites.contains(element)
-        ? ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${element['name']} added to favorites.')))
-        : ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('${element['name']} removed from favorites.')));
+  void orderRecents() {
+    Map allEntries = {};
+    List entries = Provider.of<UserData>(context).user['entries'];
+    if (entries.isNotEmpty) {
+      for (var element in entries.reversed) {
+        if (allEntries.containsKey(element['gym']['id'])) {
+          allEntries[element['gym']['id']].add(element);
+        } else {
+          allEntries[element['gym']['id']] = [element];
+        }
+      }
+      allEntries.forEach((key, value) {
+        entries.add(value[0]);
+      });
+    }
   }
 
   void showFilters() {
@@ -381,6 +387,7 @@ class _GymListState extends State<GymList> {
   // Lifecycle Methods
   @override
   void didChangeDependencies() {
+    orderRecents();
     getGyms();
     super.didChangeDependencies();
   }
@@ -399,7 +406,7 @@ class _GymListState extends State<GymList> {
           ? CustomScrollView(
               slivers: <Widget>[
                 appBar(),
-                favoriteGyms(),
+                buildEntries(),
                 buildGyms(),
               ],
             )

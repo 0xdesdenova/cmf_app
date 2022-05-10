@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 
+// Modles
+import 'user.dart';
+
 // Packages
 import 'package:http/http.dart' as http;
-
-// Utilities
-import 'utility_functions.dart';
+import 'package:provider/provider.dart';
 
 // Routes
 import 'workout_detail.dart';
@@ -23,7 +24,7 @@ class _WorkoutListState extends State<WorkoutList> {
     'level': 'Begginer',
   };
   List workouts = [];
-  List favorites = [];
+  List passes = [];
 
   // API Calls
   void getWorkouts() {
@@ -59,7 +60,7 @@ class _WorkoutListState extends State<WorkoutList> {
     );
   }
 
-  SliverPadding favoriteWorkouts() {
+  SliverPadding buildPasses() {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(vertical: 20),
       sliver: SliverToBoxAdapter(
@@ -70,7 +71,7 @@ class _WorkoutListState extends State<WorkoutList> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
               child: Text(
-                'Favorite Workouts',
+                'Recent Workouts',
                 style: TextStyle(
                   color: Colors.grey[700],
                   fontSize: 20,
@@ -80,7 +81,7 @@ class _WorkoutListState extends State<WorkoutList> {
             ),
             SizedBox(
               height: 100,
-              child: favorites.isNotEmpty
+              child: passes.isNotEmpty
                   ? ListView.separated(
                       padding: const EdgeInsets.only(left: 20),
                       scrollDirection: Axis.horizontal,
@@ -91,16 +92,11 @@ class _WorkoutListState extends State<WorkoutList> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => WorkoutDetail(
-                                  workout: favorites[index],
+                                  workout: passes[index]['workout']['id'],
                                   workouts: workouts,
                                 ),
                               ),
                             );
-                          },
-                          onDoubleTap: () {
-                            setState(() {
-                              toggleFavorite(favorites[index]);
-                            });
                           },
                           child: Container(
                             decoration: BoxDecoration(
@@ -115,14 +111,14 @@ class _WorkoutListState extends State<WorkoutList> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
                                   Text(
-                                    favorites[index]['type']['name'],
+                                    passes[index]['workout']['type']['name'],
                                     style: TextStyle(
                                         color: Colors.grey[100],
                                         fontSize: 16,
                                         fontWeight: FontWeight.w300),
                                   ),
                                   Text(
-                                    favorites[index]['name'],
+                                    passes[index]['workout']['name'],
                                     style: TextStyle(
                                       color: Colors.grey[100],
                                       fontSize: 18,
@@ -140,7 +136,7 @@ class _WorkoutListState extends State<WorkoutList> {
                           width: 20,
                         );
                       },
-                      itemCount: favorites.length,
+                      itemCount: passes.length,
                     )
                   : const Center(
                       child: Text('You have no favorites'),
@@ -172,14 +168,11 @@ class _WorkoutListState extends State<WorkoutList> {
               context,
               MaterialPageRoute(
                 builder: (context) => WorkoutDetail(
-                  workout: element,
+                  workout: element['id'],
                   workouts: workouts,
                 ),
               ),
             );
-          },
-          onDoubleTap: () {
-            toggleFavorite(element);
           },
           onLongPress: () {
             confirmReservation(context, element);
@@ -254,7 +247,7 @@ class _WorkoutListState extends State<WorkoutList> {
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              '🕘 ${parseDuration(element['duration'])}',
+                              '🕘 ${element['duration']}m',
                               style: TextStyle(
                                   color: Colors.grey[800],
                                   fontSize: 14,
@@ -283,18 +276,21 @@ class _WorkoutListState extends State<WorkoutList> {
   }
 
   // View Methods
-  void toggleFavorite(Map element) {
-    setState(() {
-      favorites.contains(element)
-          ? favorites.remove(element)
-          : favorites.add(element);
-    });
-
-    favorites.contains(element)
-        ? ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${element['name']} added to favorites.')))
-        : ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('${element['name']} removed from favorites.')));
+  void orderRecents() {
+    Map allPassess = {};
+    List passes = Provider.of<UserData>(context).user['passes'];
+    if (passes.isNotEmpty) {
+      for (var element in passes.reversed) {
+        if (allPassess.containsKey(element['workout']['id'])) {
+          allPassess[element['workout']['id']].add(element);
+        } else {
+          allPassess[element['workout']['id']] = [element];
+        }
+      }
+      allPassess.forEach((key, value) {
+        passes.add(value[0]);
+      });
+    }
   }
 
   Future confirmReservation(BuildContext context, Map element) async {
@@ -522,6 +518,7 @@ class _WorkoutListState extends State<WorkoutList> {
   // Lifecycle Methods
   @override
   void didChangeDependencies() {
+    orderRecents();
     getWorkouts();
     super.didChangeDependencies();
   }
@@ -540,7 +537,7 @@ class _WorkoutListState extends State<WorkoutList> {
           ? CustomScrollView(
               slivers: <Widget>[
                 appBar(),
-                favoriteWorkouts(),
+                buildPasses(),
                 buildWorkouts(),
               ],
             )

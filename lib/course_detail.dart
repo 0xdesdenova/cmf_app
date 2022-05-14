@@ -19,9 +19,10 @@ class _CourseDetailState extends State<CourseDetail> {
       backgroundColor: Colors.transparent,
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: false,
-        background: Image.network(
-          widget.course['type']['image'],
-          fit: BoxFit.cover,
+        background: FadeInImage.assetNetwork(
+          placeholder: 'images/image.png',
+          image: widget.course['type']['image'],
+          fit: BoxFit.fill,
         ),
         title: Padding(
           padding: const EdgeInsets.only(left: 20),

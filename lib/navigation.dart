@@ -17,10 +17,10 @@ class _CustomNavigationBarState extends State<CustomNavigationBar> {
   // Variables
   int page = 0;
   List pages = [
-    GymList(),
-    WorkoutList(),
-    CourseList(),
-    Profile(),
+    const GymList(),
+    const WorkoutList(),
+    const CourseList(),
+    const Profile(),
   ];
   @override
   Widget build(BuildContext context) {
@@ -34,7 +34,6 @@ class _CustomNavigationBarState extends State<CustomNavigationBar> {
         showSelectedLabels: false,
         showUnselectedLabels: false,
         onTap: (index) {
-          print(index);
           setState(() {
             page = index;
           });

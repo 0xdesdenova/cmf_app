@@ -67,7 +67,6 @@ class _LoginState extends State<Login> {
         loginData['sent_token'] = true;
       });
     } else {
-      print(response.body);
       await showNotification(
         context: context,
         title: 'Oops!',
@@ -99,12 +98,8 @@ class _LoginState extends State<Login> {
       loading = false;
     });
 
-    print(request.statusCode);
-
     if (request.statusCode == 202) {
       var response = json.decode(utf8.decode(request.bodyBytes));
-
-      print(response);
 
       await storage.write(
           key: 'user_id', value: response['user']['id'].toString());
@@ -202,7 +197,6 @@ class _LoginState extends State<Login> {
         child: ElevatedButton(
           onPressed: () async {
             if (!loading) {
-              print('Pressed');
               loginData['sent_token'] ? login() : getToken();
             }
           },
@@ -247,8 +241,12 @@ class _LoginState extends State<Login> {
               ),
               GestureDetector(
                 onTap: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => Register()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const Register(),
+                    ),
+                  );
                 },
                 child: const Text(
                   'here',

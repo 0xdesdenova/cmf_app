@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 
+// Utility Functions
+import 'schedule_workout.dart';
+
 // Modles
 import 'user.dart';
 
@@ -24,7 +27,7 @@ class _WorkoutListState extends State<WorkoutList> {
     'level': 'Begginer',
   };
   List workouts = [];
-  List passes = [];
+  List recentWorkouts = [];
 
   // API Calls
   void getWorkouts() {
@@ -81,7 +84,7 @@ class _WorkoutListState extends State<WorkoutList> {
             ),
             SizedBox(
               height: 100,
-              child: passes.isNotEmpty
+              child: recentWorkouts.isNotEmpty
                   ? ListView.separated(
                       padding: const EdgeInsets.only(left: 20),
                       scrollDirection: Axis.horizontal,
@@ -92,7 +95,8 @@ class _WorkoutListState extends State<WorkoutList> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => WorkoutDetail(
-                                  workout: passes[index]['workout']['id'],
+                                  workout: recentWorkouts[index]['workout']
+                                      ['id'],
                                   workouts: workouts,
                                 ),
                               ),
@@ -111,14 +115,15 @@ class _WorkoutListState extends State<WorkoutList> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
                                   Text(
-                                    passes[index]['workout']['type']['name'],
+                                    recentWorkouts[index]['workout']['type']
+                                        ['name'],
                                     style: TextStyle(
                                         color: Colors.grey[100],
                                         fontSize: 16,
                                         fontWeight: FontWeight.w300),
                                   ),
                                   Text(
-                                    passes[index]['workout']['name'],
+                                    recentWorkouts[index]['workout']['name'],
                                     style: TextStyle(
                                       color: Colors.grey[100],
                                       fontSize: 18,
@@ -136,10 +141,10 @@ class _WorkoutListState extends State<WorkoutList> {
                           width: 20,
                         );
                       },
-                      itemCount: passes.length,
+                      itemCount: recentWorkouts.length,
                     )
                   : const Center(
-                      child: Text('You have no favorites'),
+                      child: Text('You have not worked out recently'),
                     ),
             ),
           ],
@@ -195,8 +200,9 @@ class _WorkoutListState extends State<WorkoutList> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
-                    child: Image.network(
-                      element['type']['image'],
+                    child: FadeInImage.assetNetwork(
+                      placeholder: 'images/image.png',
+                      image: element['type']['image'],
                       height: 100,
                       width: 100,
                       fit: BoxFit.cover,
@@ -278,9 +284,9 @@ class _WorkoutListState extends State<WorkoutList> {
   // View Methods
   void orderRecents() {
     Map allPassess = {};
-    List passes = Provider.of<UserData>(context).user['passes'];
-    if (passes.isNotEmpty) {
-      for (var element in passes.reversed) {
+    List userPasses = Provider.of<UserData>(context).user['passes'];
+    if (userPasses.isNotEmpty) {
+      for (var element in userPasses.reversed) {
         if (allPassess.containsKey(element['workout']['id'])) {
           allPassess[element['workout']['id']].add(element);
         } else {
@@ -288,123 +294,9 @@ class _WorkoutListState extends State<WorkoutList> {
         }
       }
       allPassess.forEach((key, value) {
-        passes.add(value[0]);
+        recentWorkouts.add(value[0]);
       });
     }
-  }
-
-  Future confirmReservation(BuildContext context, Map element) async {
-    return await showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Text(
-                'Schedule',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                'Choose a time for ${element['name']}',
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 18,
-                ),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              height: 75,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (context, index) {
-                  return Container(
-                    width: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      border: Border.all(
-                        width: 3,
-                        color: Colors.grey,
-                      ),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Center(
-                        child: Text(
-                      '10:30',
-                      style: TextStyle(
-                        color: Colors.grey[700],
-                        fontSize: 20,
-                      ),
-                    )),
-                  );
-                },
-                separatorBuilder: (context, index) {
-                  return const SizedBox(width: 10);
-                },
-                itemCount: 10,
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                'Confirm Payment',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                'Are you sure you want to reserve a spot for Q${element['price']}?',
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 18,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: SizedBox(
-                height: 50,
-                width: double.infinity,
-                child: RaisedButton(
-                  onPressed: () {},
-                  onLongPress: () {
-                    Navigator.pop(context);
-                  },
-                  color: Colors.deepPurpleAccent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Text(
-                    'Hold Down to Reserve',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    ).then((value) => value ?? false
-        ? ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Class Reserved')))
-        : null);
   }
 
   void showFilters() {

@@ -47,14 +47,14 @@ class _SplashScreenState extends State<SplashScreen> {
         );
       } else {
         await Future.delayed(const Duration(seconds: 3), () {
-          Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (context) => Onboarding()));
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => const Onboarding()));
         });
       }
     } else {
       await Future.delayed(const Duration(seconds: 3), () {
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => Onboarding()));
+        Navigator.pushReplacement(context,
+            MaterialPageRoute(builder: (context) => const Onboarding()));
       });
     }
 

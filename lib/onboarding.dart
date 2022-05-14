@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'login.dart';
 
 class Onboarding extends StatefulWidget {
+  const Onboarding({Key? key}) : super(key: key);
+
   @override
   _OnboardingState createState() => _OnboardingState();
 }
@@ -30,7 +32,7 @@ class _OnboardingState extends State<Onboarding> {
       },
     ];
     List<Widget> slides = [];
-    slideInfo.forEach((element) {
+    for (var element in slideInfo) {
       slides.add(Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -71,7 +73,7 @@ class _OnboardingState extends State<Onboarding> {
           ],
         ),
       ));
-    });
+    }
     return slides;
   }
 
@@ -92,7 +94,7 @@ class _OnboardingState extends State<Onboarding> {
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(20),
+            padding: const EdgeInsets.all(20),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
@@ -118,7 +120,7 @@ class _OnboardingState extends State<Onboarding> {
             ),
           ),
           Padding(
-            padding: EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               vertical: 30,
               horizontal: 20,
             ),
@@ -132,9 +134,9 @@ class _OnboardingState extends State<Onboarding> {
                 ),
                 onPressed: () {
                   Navigator.pushReplacement(context,
-                      MaterialPageRoute(builder: (context) => Login()));
+                      MaterialPageRoute(builder: (context) => const Login()));
                 },
-                child: Text(
+                child: const Text(
                   'Start',
                   style: TextStyle(
                     color: Colors.white,

@@ -6,6 +6,7 @@ import 'user.dart';
 
 // Packages
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
 
 class Profile extends StatefulWidget {
   const Profile({Key? key}) : super(key: key);
@@ -16,34 +17,11 @@ class Profile extends StatefulWidget {
 
 class _ProfileState extends State<Profile> {
   // Variables
+  int subscription = 0;
+  List entries = [];
   List passes = [];
   List sessions = [];
-  List<Map> exerciseTypeProgress = [
-    {
-      'name': 'Flexibility',
-      'icon': '🤸',
-      'experience': 0,
-      'image': 'images/yoga.png',
-    },
-    {
-      'name': 'Aerobics',
-      'icon': '🚴',
-      'experience': 10,
-      'image': 'images/cardio.png',
-    },
-    {
-      'name': 'Strength Trianing',
-      'icon': '💪',
-      'experience': 5,
-      'image': 'images/core.png',
-    },
-    {
-      'name': 'Mindfulness',
-      'icon': '🧘‍♂️',
-      'experience': 300,
-      'image': 'images/mindfulness.png',
-    },
-  ];
+  List<Map> exerciseTypeProgress = [];
 
   List<Color> levelColors = [
     Colors.amber,
@@ -53,6 +31,24 @@ class _ProfileState extends State<Profile> {
     Colors.indigoAccent,
     Colors.deepPurpleAccent,
   ];
+
+  // API Calls
+  Future updateSubscription({required String subscriptionLevel}) async {
+    String userId =
+        Provider.of<UserData>(context, listen: false).user['id'].toString();
+    Uri uri = Uri.parse(
+        'https://choosemyfitness-api.herokuapp.com/api/users/$userId/');
+
+    var response = await http.patch(uri, body: {
+      'subscription_level': subscriptionLevel,
+    });
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   // View Elements
   SliverAppBar appBar() {
@@ -116,16 +112,16 @@ class _ProfileState extends State<Profile> {
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
+                      children: [
                         Text(
-                          '3 🔥',
-                          style: TextStyle(
+                          '${streak()} 🔥',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 30,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        Text(
+                        const Text(
                           'day streak',
                           style: TextStyle(
                             color: Colors.white,
@@ -146,16 +142,16 @@ class _ProfileState extends State<Profile> {
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
+                      children: [
                         Text(
-                          '4 🕘',
-                          style: TextStyle(
+                          '${totalSessions()} 💪',
+                          style: const TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        Text(
-                          'hours/week',
+                        const Text(
+                          'total sessions',
                           style: TextStyle(
                             fontSize: 20,
                           ),
@@ -166,19 +162,26 @@ class _ProfileState extends State<Profile> {
                 ),
               ],
             ),
-            Container(
-              margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.amberAccent,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                '🔥⚡️ Go Pro to unlock all features for \$7.99/month.',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 25,
-                  fontWeight: FontWeight.w700,
+            GestureDetector(
+              onTap: () {
+                manageSubscription();
+              },
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  subscription == 0
+                      ? '⚡️ Go Pro to unlock all features for \$7.99/month.'
+                      : '⚡️  Way to go! Manage your active pro subscription.',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 25,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
@@ -203,33 +206,35 @@ class _ProfileState extends State<Profile> {
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Image.asset(
-                  element['image'],
+                FadeInImage.assetNetwork(
+                  placeholder: 'images/image.png',
+                  image: element['image'],
                   fit: BoxFit.fill,
                 ),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${element['name']}',
-                      style: TextStyle(
-                        color: Colors.grey[900],
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${element['name']}',
+                        style: TextStyle(
+                          color: Colors.grey[900],
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    Text(
-                      '${element['experience']} sessions this week.',
-                      style: TextStyle(
-                        color: Colors.grey[800],
-                        fontSize: 16,
-                        fontWeight: FontWeight.w300,
+                      Text(
+                        '${element['experience']}xp',
+                        style: TextStyle(
+                          color: Colors.grey[800],
+                          fontSize: 16,
+                          fontWeight: FontWeight.w300,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 Stack(
                   alignment: Alignment.center,
@@ -268,33 +273,165 @@ class _ProfileState extends State<Profile> {
     );
   }
 
+  void manageSubscription() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Credit Card',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const ListTile(
+                leading: Icon(Icons.credit_card),
+                title: Text('Visa ending in 3005'),
+                subtitle: Text('Expires 02/23'),
+                trailing: Icon(Icons.clear),
+              ),
+              const Text(
+                'Subscription Level',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Text(
+                'Hold down to subscribe',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 16,
+                ),
+              ),
+              Column(
+                children: [
+                  ListTile(
+                    onLongPress: () async {
+                      bool success =
+                          await updateSubscription(subscriptionLevel: '1');
+                      if (success) {
+                        Navigator.pop(context, true);
+                      }
+                    },
+                    title: const Text('Ultimate'),
+                    subtitle: const Text('Voltio, Orange Theory'),
+                    trailing: subscription == 1
+                        ? const Icon(Icons.radio_button_on)
+                        : const Icon(Icons.radio_button_off),
+                  ),
+                  ListTile(
+                    onLongPress: () async {
+                      bool success =
+                          await updateSubscription(subscriptionLevel: '2');
+                      if (success) {
+                        Navigator.pop(context, true);
+                      }
+                    },
+                    title: const Text('Premium'),
+                    subtitle: const Text('Fitness One, World Gym'),
+                    trailing: subscription == 2
+                        ? const Icon(Icons.radio_button_on)
+                        : const Icon(Icons.radio_button_off),
+                  ),
+                  ListTile(
+                    onLongPress: () async {
+                      bool success =
+                          await updateSubscription(subscriptionLevel: '3');
+                      if (success) {
+                        Navigator.pop(context, true);
+                      }
+                    },
+                    title: const Text('Basic'),
+                    subtitle: const Text('Sporta, Exerzone'),
+                    trailing: subscription == 3
+                        ? const Icon(Icons.radio_button_on)
+                        : const Icon(Icons.radio_button_off),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    ).then((value) => value ?? false
+        ? ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Subscription Updated')))
+        : null);
+  }
+
   // View Methods
+  String streak() {
+    bool missedDay = false;
+    DateTime date = DateTime.now();
+    int days = 0;
+
+    List attendances = entries.map((element) => element['timestamp']).toList() +
+        passes.map((element) => element['scheduled']).toList() +
+        sessions.map((element) => element['timestamp']).toList();
+
+    while (!missedDay) {
+      attendances.firstWhere(
+          (element) => element.split('T')[0] == date.toString().split(' ')[0],
+          orElse: () => missedDay = true);
+
+      if (!missedDay) {
+        days++;
+        date = date.add(const Duration(days: -1));
+      }
+    }
+    return '$days';
+  }
+
+  int totalSessions() {
+    return entries.length + passes.length + sessions.length;
+  }
+
   void generateTypeProgress() {
     Map allEntries = {};
-    Provider.of<UserData>(context).user['passes'].reversed.forEach((element) {
+    for (var element in passes.reversed) {
       if (allEntries.containsKey(element['workout']['type']['id'])) {
-        allEntries[element['workout']['type']['id']]['points'] += 10;
+        allEntries[element['workout']['type']['id']]['experience'] += 10;
       } else {
         allEntries[element['workout']['type']['id']] =
             element['workout']['type'];
-        allEntries[element['workout']['type']['id']]['points'] = 10;
+        allEntries[element['workout']['type']['id']]['experience'] = 10;
       }
-    });
-    Provider.of<UserData>(context).user['sessions'].reversed.forEach((element) {
+    }
+    for (var element in sessions.reversed) {
       if (allEntries.containsKey(element['virtual_workout']['type'])) {
-        allEntries[element['virtual_workout']['type']]['points'] += 5;
+        allEntries[element['virtual_workout']['type']]['experience'] += 5;
       } else {
         allEntries[element['virtual_workout']['type']] =
             element['virtual_workout']['type'];
-        allEntries[element['virtual_workout']['type']]['points'] = 5;
+        allEntries[element['virtual_workout']['type']]['experience'] = 5;
       }
+    }
+    allEntries.forEach((key, value) {
+      exerciseTypeProgress.add(
+        {
+          'name': value['name'],
+          'experience': value['experience'],
+          'image': value['image'],
+        },
+      );
     });
-    print(allEntries);
   }
 
   // Lifecycle Methods
   @override
   void didChangeDependencies() {
+    subscription =
+        Provider.of<UserData>(context).user['subscription_level'] ?? 0;
+    entries = Provider.of<UserData>(context).user['entries'];
+    passes = Provider.of<UserData>(context).user['passes'];
+    sessions = Provider.of<UserData>(context).user['sessions'];
     generateTypeProgress();
     super.didChangeDependencies();
   }

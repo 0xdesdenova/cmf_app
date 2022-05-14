@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
 
 // Packages
 import 'package:http/http.dart' as http;
@@ -55,7 +54,6 @@ class _RegisterState extends State<Register> {
       );
       Navigator.pop(context);
     } else {
-      print(response.body);
       await showNotification(
         context: context,
         title: 'Oops!',
@@ -219,7 +217,7 @@ class _RegisterState extends State<Register> {
                 },
                 child: const Text(
                   'Create Account',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 25,
                   ),

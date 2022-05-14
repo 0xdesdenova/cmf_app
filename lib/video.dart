@@ -69,7 +69,7 @@ class _VideoState extends State<Video> {
           controller: controller,
           topActions: <Widget>[
             IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.arrow_back_ios,
                 color: Colors.white,
               ),

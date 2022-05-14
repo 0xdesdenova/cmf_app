@@ -99,9 +99,10 @@ class _CourseListState extends State<CourseList> {
               child: Stack(
                 alignment: Alignment.centerRight,
                 children: <Widget>[
-                  Image.network(
-                    element['type']['image'],
-                    fit: BoxFit.fitWidth,
+                  FadeInImage.assetNetwork(
+                    placeholder: 'images/image.png',
+                    image: element['type']['image'],
+                    fit: BoxFit.fill,
                   ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -311,7 +312,7 @@ class _CourseListState extends State<CourseList> {
 
 class FilterMenu extends StatefulWidget {
   final filter;
-  FilterMenu(this.filter);
+  const FilterMenu(this.filter, {Key? key}) : super(key: key);
 
   @override
   _FilterMenuState createState() => _FilterMenuState();
@@ -348,7 +349,7 @@ class _FilterMenuState extends State<FilterMenu> {
 
   List<Widget> createFilters() {
     List<Widget> filterList = [];
-    filters.forEach((element) {
+    for (var element in filters) {
       filterList.add(Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -370,7 +371,7 @@ class _FilterMenuState extends State<FilterMenu> {
           )
         ],
       ));
-    });
+    }
     return filterList;
   }
 
@@ -396,7 +397,7 @@ class _FilterMenuState extends State<FilterMenu> {
             Container(
               child: const Text(
                 'Select Filters to Apply',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                 ),
               ),

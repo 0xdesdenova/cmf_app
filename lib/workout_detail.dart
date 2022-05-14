@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 
-// Packages
-import 'package:http/http.dart' as http;
-
 // Utility Functions
 import 'utility_functions.dart';
+import 'schedule_workout.dart';
 
-// Routes
+// Modles
+import 'user.dart';
+
+// Packages
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 class WorkoutDetail extends StatefulWidget {
   const WorkoutDetail({Key? key, required this.workout, this.workouts})
@@ -42,9 +45,10 @@ class _WorkoutDetailState extends State<WorkoutDetail> {
       expandedHeight: 200,
       backgroundColor: Colors.transparent,
       flexibleSpace: FlexibleSpaceBar(
-        background: Image.network(
-          workout['type']['image'],
-          fit: BoxFit.cover,
+        background: FadeInImage.assetNetwork(
+          placeholder: 'images/image.png',
+          image: workout['type']['image'],
+          fit: BoxFit.fill,
         ),
       ),
     );
@@ -73,7 +77,12 @@ class _WorkoutDetailState extends State<WorkoutDetail> {
                   onTap: () {
                     confirmReservation(context, workout);
                   },
-                  child: const Text('Book Now'),
+                  child: Chip(
+                    backgroundColor: Colors.grey[300],
+                    label: const Text(
+                      'Book Now',
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -266,8 +275,9 @@ class _WorkoutDetailState extends State<WorkoutDetail> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
-                    child: Image.network(
-                      element['type']['image'],
+                    child: FadeInImage.assetNetwork(
+                      placeholder: 'images/image.png',
+                      image: element['type']['image'],
                       height: 100,
                       width: 100,
                       fit: BoxFit.cover,
@@ -346,124 +356,13 @@ class _WorkoutDetailState extends State<WorkoutDetail> {
     );
   }
 
-  // View Methods
-  Future confirmReservation(BuildContext context, Map element) async {
-    return await showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Text(
-                'Schedule',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                'Choose a time for ${element['name']}',
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 18,
-                ),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              height: 75,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (context, index) {
-                  return Container(
-                    width: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      border: Border.all(
-                        width: 3,
-                        color: Colors.grey,
-                      ),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Center(
-                        child: Text(
-                      '10:30',
-                      style: TextStyle(
-                        color: Colors.grey[700],
-                        fontSize: 20,
-                      ),
-                    )),
-                  );
-                },
-                separatorBuilder: (context, index) {
-                  return const SizedBox(width: 10);
-                },
-                itemCount: 10,
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                'Confirm Payment',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                'Are you sure you want to reserve a spot for Q${element['price']}?',
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 18,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: SizedBox(
-                height: 50,
-                width: double.infinity,
-                child: RaisedButton(
-                  onPressed: () {},
-                  onLongPress: () {
-                    Navigator.pop(context, true);
-                  },
-                  color: Colors.deepPurpleAccent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Text(
-                    'Hold Down to Reserve',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    ).then((value) => value ?? false
-        ? ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Class Reserved')))
-        : null);
-  }
-
   // Lifecycle Methods
   @override
   void didChangeDependencies() {
+    passes = Provider.of<UserData>(context)
+        .user['passes']
+        .where((element) => element['workout']['id'] == widget.workout)
+        .toList();
     getWorkout();
     super.didChangeDependencies();
   }

@@ -10,8 +10,33 @@ import 'user.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
+// Variables
 PageController controller = PageController();
+List days = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thurday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+];
+List months = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sept',
+  'Oct',
+  'Nov',
+  'Dec',
+];
 
+// API Calls
 Future getPass(
     {required BuildContext context,
     required int workout,
@@ -26,52 +51,49 @@ Future getPass(
   });
 
   if (response.statusCode == 201) {
+    Provider.of<UserData>(context, listen: false).updateUser();
     return true;
   } else {
     return false;
   }
 }
 
-List buildSchedule({required Map workout, required int dateOffset}) {
-  int weekday = DateTime.now().add(Duration(days: dateOffset)).weekday;
-  return workout['schedule']
+// View Methods
+List buildSchedule({required Map workout, required DateTime selectedDate}) {
+  int weekday = selectedDate.weekday;
+  List schedule = workout['schedule']
       .where((element) => element['day'] == weekday)
       .toList();
+
+  for (var element in List.from(schedule)) {
+    int reservations = 0;
+    String time =
+        '${selectedDate.toString().split(' ')[0]}T${element['time']}Z';
+    workout['passes'].forEach((element) {
+      if (element['scheduled'] == time) {
+        reservations++;
+      }
+    });
+    if (reservations >= workout['capacity']) {
+      schedule.remove(element);
+    }
+  }
+
+  return schedule;
 }
 
 Future confirmReservation(BuildContext context, Map workout) async {
   return await showModalBottomSheet(
     context: context,
     builder: (context) {
-      List days = [
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thurday',
-        'Friday',
-        'Saturday',
-        'Sunday',
-      ];
-      List months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sept',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      int dateOffset = 0;
-      int selectedTimeSlot = 0;
-
       DateTime now = DateTime.now();
+      int dateOffset = 0;
+
+      // TODO: Consider packaging.
+      int selectedTimeSlot = 0;
       DateTime selectedDate = now.add(Duration(days: dateOffset));
-      List schedule = buildSchedule(workout: workout, dateOffset: dateOffset);
+      List schedule =
+          buildSchedule(workout: workout, selectedDate: selectedDate);
 
       return StatefulBuilder(builder: (context, setModalState) {
         return Column(
@@ -105,11 +127,12 @@ Future confirmReservation(BuildContext context, Map workout) async {
                 controller: controller,
                 physics: const NeverScrollableScrollPhysics(),
                 onPageChanged: (newIndex) {
+                  // TODO: Consider packaging.
                   setModalState(() {
                     selectedTimeSlot = 0;
                     selectedDate = now.add(Duration(days: dateOffset));
-                    schedule =
-                        buildSchedule(workout: workout, dateOffset: newIndex);
+                    schedule = buildSchedule(
+                        workout: workout, selectedDate: selectedDate);
                   });
                 },
                 itemBuilder: (context, index) {

@@ -31,7 +31,8 @@ class _VideoState extends State<Video> {
       'user':
           Provider.of<UserData>(context, listen: false).user['id'].toString(),
       'virtual_workout': widget.workout['id'].toString(),
-    });
+    }).then(
+        (value) => Provider.of<UserData>(context, listen: false).updateUser());
   }
 
   @override
@@ -47,9 +48,12 @@ class _VideoState extends State<Video> {
       flags: const YoutubePlayerFlags(),
     );
     controller.addListener(() {
-      if (controller.value.position.inSeconds > 60 && !watched) {
+      if (controller.value.position.inSeconds >
+              widget.workout['duration'] * 30 &&
+          !watched) {
         addSession();
         watched = true;
+        print('Watched video');
       }
     });
     super.didChangeDependencies();

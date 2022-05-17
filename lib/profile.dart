@@ -6,7 +6,9 @@ import 'user.dart';
 
 // Packages
 import 'package:provider/provider.dart';
-import 'package:http/http.dart' as http;
+
+// Utility Functions
+import 'manage_subscription.dart';
 
 class Profile extends StatefulWidget {
   const Profile({Key? key}) : super(key: key);
@@ -15,14 +17,8 @@ class Profile extends StatefulWidget {
   _ProfileState createState() => _ProfileState();
 }
 
-class _ProfileState extends State<Profile> {
+class _ProfileState extends State<Profile> with WidgetsBindingObserver {
   // Variables
-  int subscription = 0;
-  List entries = [];
-  List passes = [];
-  List sessions = [];
-  List<Map> exerciseTypeProgress = [];
-
   List<Color> levelColors = [
     Colors.amber,
     Colors.orangeAccent,
@@ -32,61 +28,30 @@ class _ProfileState extends State<Profile> {
     Colors.deepPurpleAccent,
   ];
 
-  // API Calls
-  Future updateSubscription({required String subscriptionLevel}) async {
-    String userId =
-        Provider.of<UserData>(context, listen: false).user['id'].toString();
-    Uri uri = Uri.parse(
-        'https://choosemyfitness-api.herokuapp.com/api/users/$userId/');
-
-    var response = await http.patch(uri, body: {
-      'subscription_level': subscriptionLevel,
-    });
-
-    if (response.statusCode == 200) {
-      return true;
-    } else {
-      return false;
-    }
-  }
+  Map user = {};
+  List<Map> exerciseTypeProgress = [];
 
   // View Elements
   SliverAppBar appBar() {
     return SliverAppBar(
-      expandedHeight: 400,
+      expandedHeight: 300,
       backgroundColor: Colors.transparent,
       flexibleSpace: FlexibleSpaceBar(
-        centerTitle: true,
-        background: Center(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(150),
-            child: Image.asset(
-              'images/profile.png',
-              height: 300,
-              width: 300,
-              fit: BoxFit.cover,
+        centerTitle: false,
+        background: Image.asset(
+          'images/profile.png',
+          fit: BoxFit.cover,
+        ),
+        title: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Text(
+            '${user['first_name']} ${user['last_name']}',
+            style: TextStyle(
+              color: Colors.grey[900],
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
             ),
           ),
-        ),
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              'Enrique Descamps',
-              style: TextStyle(
-                color: Colors.grey[900],
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            Text(
-              'Level: Pro',
-              style: TextStyle(
-                color: Colors.grey[700],
-                fontSize: 16,
-              ),
-            ),
-          ],
         ),
         titlePadding: EdgeInsets.zero,
       ),
@@ -164,7 +129,7 @@ class _ProfileState extends State<Profile> {
             ),
             GestureDetector(
               onTap: () {
-                manageSubscription();
+                manageSubscription(context: context, user: user);
               },
               child: Container(
                 margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -174,9 +139,9 @@ class _ProfileState extends State<Profile> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  subscription == 0
+                  user['subscription_level'] == 0
                       ? '⚡️ Go Pro to unlock all features for \$7.99/month.'
-                      : '⚡️  Way to go! Manage your active pro subscription.',
+                      : '⚡️  Way to go! Manage your active pro subscription here.',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 25,
@@ -191,7 +156,7 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  SliverList buildExerciseProgress() {
+  SliverPadding buildExerciseProgress() {
     List<Widget> exerciseProgressList = [];
     for (var element in exerciseTypeProgress) {
       exerciseProgressList.add(
@@ -266,104 +231,14 @@ class _ProfileState extends State<Profile> {
         ),
       );
     }
-    return SliverList(
-      delegate: SliverChildListDelegate(
-        exerciseProgressList,
+    return SliverPadding(
+      padding: const EdgeInsets.only(bottom: 20),
+      sliver: SliverList(
+        delegate: SliverChildListDelegate(
+          exerciseProgressList,
+        ),
       ),
     );
-  }
-
-  void manageSubscription() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Credit Card',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const ListTile(
-                leading: Icon(Icons.credit_card),
-                title: Text('Visa ending in 3005'),
-                subtitle: Text('Expires 02/23'),
-                trailing: Icon(Icons.clear),
-              ),
-              const Text(
-                'Subscription Level',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Text(
-                'Hold down to subscribe',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 16,
-                ),
-              ),
-              Column(
-                children: [
-                  ListTile(
-                    onLongPress: () async {
-                      bool success =
-                          await updateSubscription(subscriptionLevel: '1');
-                      if (success) {
-                        Navigator.pop(context, true);
-                      }
-                    },
-                    title: const Text('Ultimate'),
-                    subtitle: const Text('Voltio, Orange Theory'),
-                    trailing: subscription == 1
-                        ? const Icon(Icons.radio_button_on)
-                        : const Icon(Icons.radio_button_off),
-                  ),
-                  ListTile(
-                    onLongPress: () async {
-                      bool success =
-                          await updateSubscription(subscriptionLevel: '2');
-                      if (success) {
-                        Navigator.pop(context, true);
-                      }
-                    },
-                    title: const Text('Premium'),
-                    subtitle: const Text('Fitness One, World Gym'),
-                    trailing: subscription == 2
-                        ? const Icon(Icons.radio_button_on)
-                        : const Icon(Icons.radio_button_off),
-                  ),
-                  ListTile(
-                    onLongPress: () async {
-                      bool success =
-                          await updateSubscription(subscriptionLevel: '3');
-                      if (success) {
-                        Navigator.pop(context, true);
-                      }
-                    },
-                    title: const Text('Basic'),
-                    subtitle: const Text('Sporta, Exerzone'),
-                    trailing: subscription == 3
-                        ? const Icon(Icons.radio_button_on)
-                        : const Icon(Icons.radio_button_off),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    ).then((value) => value ?? false
-        ? ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Subscription Updated')))
-        : null);
   }
 
   // View Methods
@@ -372,9 +247,10 @@ class _ProfileState extends State<Profile> {
     DateTime date = DateTime.now();
     int days = 0;
 
-    List attendances = entries.map((element) => element['timestamp']).toList() +
-        passes.map((element) => element['scheduled']).toList() +
-        sessions.map((element) => element['timestamp']).toList();
+    List attendances =
+        user['entries'].map((element) => element['timestamp']).toList() +
+            user['passes'].map((element) => element['scheduled']).toList() +
+            user['sessions'].map((element) => element['timestamp']).toList();
 
     while (!missedDay) {
       attendances.firstWhere(
@@ -390,12 +266,15 @@ class _ProfileState extends State<Profile> {
   }
 
   int totalSessions() {
-    return entries.length + passes.length + sessions.length;
+    return user['entries'].length +
+        user['passes'].length +
+        user['sessions'].length;
   }
 
   void generateTypeProgress() {
     Map allEntries = {};
-    for (var element in passes.reversed) {
+    exerciseTypeProgress = [];
+    for (var element in user['passes'].reversed) {
       if (allEntries.containsKey(element['workout']['type']['id'])) {
         allEntries[element['workout']['type']['id']]['experience'] += 10;
       } else {
@@ -404,13 +283,16 @@ class _ProfileState extends State<Profile> {
         allEntries[element['workout']['type']['id']]['experience'] = 10;
       }
     }
-    for (var element in sessions.reversed) {
-      if (allEntries.containsKey(element['virtual_workout']['type'])) {
-        allEntries[element['virtual_workout']['type']]['experience'] += 5;
+    for (var element in user['sessions'].reversed) {
+      if (allEntries
+          .containsKey(element['virtual_workout']['course']['type']['id'])) {
+        allEntries[element['virtual_workout']['course']['type']['id']]
+            ['experience'] += 5;
       } else {
-        allEntries[element['virtual_workout']['type']] =
-            element['virtual_workout']['type'];
-        allEntries[element['virtual_workout']['type']]['experience'] = 5;
+        allEntries[element['virtual_workout']['course']['type']['id']] =
+            element['virtual_workout']['course']['type'];
+        allEntries[element['virtual_workout']['course']['type']['id']]
+            ['experience'] = 5;
       }
     }
     allEntries.forEach((key, value) {
@@ -426,12 +308,24 @@ class _ProfileState extends State<Profile> {
 
   // Lifecycle Methods
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    if (state == AppLifecycleState.resumed) {
+      if (checkoutId != '') {
+        await addCreditCard(context: context, userId: user['id'])
+            .then((value) => value ? Navigator.pop(context, true) : null);
+      }
+    }
+  }
+
+  @override
+  initState() {
+    WidgetsBinding.instance!.addObserver(this);
+    super.initState();
+  }
+
+  @override
   void didChangeDependencies() {
-    subscription =
-        Provider.of<UserData>(context).user['subscription_level'] ?? 0;
-    entries = Provider.of<UserData>(context).user['entries'];
-    passes = Provider.of<UserData>(context).user['passes'];
-    sessions = Provider.of<UserData>(context).user['sessions'];
+    user = Provider.of<UserData>(context).user;
     generateTypeProgress();
     super.didChangeDependencies();
   }
@@ -441,6 +335,12 @@ class _ProfileState extends State<Profile> {
     if (mounted) {
       super.setState(fn);
     }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance!.removeObserver(this);
+    super.dispose();
   }
 
   @override

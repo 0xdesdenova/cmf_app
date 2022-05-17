@@ -125,7 +125,9 @@ class _CourseDetailState extends State<CourseDetail> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: <Widget>[
                               Text(
-                                '🔥 5 reps',
+                                element['repetitions'] == 1
+                                    ? '🔥 ${element['repetitions']} rep'
+                                    : '🔥 ${element['repetitions']} reps',
                                 style: TextStyle(
                                     color: Colors.grey[800],
                                     fontSize: 14,

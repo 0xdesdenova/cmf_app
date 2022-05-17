@@ -26,7 +26,6 @@ class _CourseListState extends State<CourseList> {
     'Advanced',
   ];
   List courses = [];
-  List sessions = [];
 
   // API Calls
   void getCourses() {
@@ -102,7 +101,9 @@ class _CourseListState extends State<CourseList> {
                   FadeInImage.assetNetwork(
                     placeholder: 'images/image.png',
                     image: element['type']['image'],
-                    fit: BoxFit.fill,
+                    height: 100,
+                    width: 100,
+                    fit: BoxFit.cover,
                   ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -182,7 +183,67 @@ class _CourseListState extends State<CourseList> {
     );
   }
 
-  SliverPadding buildRecurring() {
+  // View Utility Methods
+  num courseDuration(List course) {
+    num totalTime = 0;
+    for (var element in course) {
+      totalTime += element['duration'];
+    }
+    return totalTime;
+  }
+
+  // View Lifecycle Methods
+  @override
+  void didChangeDependencies() {
+    getCourses();
+    super.didChangeDependencies();
+  }
+
+  @override
+  void setState(VoidCallback fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: courses.isNotEmpty
+          ? CustomScrollView(
+              slivers: <Widget>[
+                appBar(),
+                const RecurringSessions(),
+                buildCourses(),
+              ],
+            )
+          : const CircularProgressIndicator(),
+    );
+  }
+}
+
+// View Widgets
+class RecurringSessions extends StatefulWidget {
+  const RecurringSessions({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  State<RecurringSessions> createState() => _RecurringSessionsState();
+}
+
+class _RecurringSessionsState extends State<RecurringSessions> {
+  // Variables
+  List sessions = [];
+  @override
+  void didChangeDependencies() {
+    sessions = Provider.of<UserData>(context).user['sessions'].toSet().toList();
+
+    super.didChangeDependencies();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(vertical: 20),
       sliver: SliverToBoxAdapter(
@@ -206,7 +267,7 @@ class _CourseListState extends State<CourseList> {
               child: sessions.isNotEmpty
                   ? ListView.separated(
                       padding: const EdgeInsets.only(left: 20),
-                      itemCount: courses.length,
+                      itemCount: sessions.length,
                       scrollDirection: Axis.horizontal,
                       itemBuilder: (context, index) {
                         return GestureDetector(
@@ -263,165 +324,6 @@ class _CourseListState extends State<CourseList> {
                   : const Center(
                       child: Text('You have not started any courses'),
                     ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // View Utility Methods
-  num courseDuration(List course) {
-    num totalTime = 0;
-    for (var element in course) {
-      totalTime += element['duration'];
-    }
-    return totalTime;
-  }
-
-  // View Lifecycle Methods
-  @override
-  void didChangeDependencies() {
-    sessions = Provider.of<UserData>(context).user['sessions'].toSet().toList();
-    getCourses();
-    super.didChangeDependencies();
-  }
-
-  @override
-  void setState(VoidCallback fn) {
-    if (mounted) {
-      super.setState(fn);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: courses.isNotEmpty
-          ? CustomScrollView(
-              slivers: <Widget>[
-                appBar(),
-                buildRecurring(),
-                buildCourses(),
-              ],
-            )
-          : const CircularProgressIndicator(),
-    );
-  }
-}
-
-class FilterMenu extends StatefulWidget {
-  final filter;
-  const FilterMenu(this.filter, {Key? key}) : super(key: key);
-
-  @override
-  _FilterMenuState createState() => _FilterMenuState();
-}
-
-class _FilterMenuState extends State<FilterMenu> {
-  List filters = [
-    {
-      'name': 'flexibility',
-      'label': 'Flexibility',
-      'value': false,
-    },
-    {
-      'name': 'strength',
-      'label': 'Strength Training',
-      'value': false,
-    },
-    {
-      'name': 'mindfulness',
-      'label': 'Mindfulness',
-      'value': false,
-    },
-    {
-      'name': 'aerobics',
-      'label': 'Aerobics',
-      'value': false,
-    },
-    {
-      'name': 'premium',
-      'label': 'Premium Content',
-      'value': false,
-    },
-  ];
-
-  List<Widget> createFilters() {
-    List<Widget> filterList = [];
-    for (var element in filters) {
-      filterList.add(Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Container(
-              child: Text(
-                element['label'],
-                style: const TextStyle(fontSize: 16),
-              ),
-            ),
-          ),
-          Switch(
-            value: element['value'],
-            onChanged: (value) {
-              setState(() {
-                element['value'] = !element['value'];
-              });
-            },
-          )
-        ],
-      ));
-    }
-    return filterList;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Drawer(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(150),
-                child: Image.asset(
-                  'images/filter.png',
-                  height: 150,
-                  width: 150,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-            Container(
-              child: const Text(
-                'Select Filters to Apply',
-                style: TextStyle(
-                  fontSize: 20,
-                ),
-              ),
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: createFilters(),
-            ),
-            SizedBox(
-              width: double.infinity,
-              child: RaisedButton(
-                color: Colors.deepPurpleAccent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                onPressed: widget.filter,
-                child: const Text(
-                  'Filter',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                  ),
-                ),
-              ),
             ),
           ],
         ),
